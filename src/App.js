@@ -1,28 +1,47 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
+// import GameStart from './components/GameStart';
+import API from './utils/API';
+
+
 
 class App extends Component {
+  state = {
+    cards: [],
+    query: "",
+    nutrition: {}
+  };
+
+componentDidMount(){
+  API.getNutrition("eggs").then( res => {
+    console.log(res);
+    this.setState({nutrition: res.data.list});
+    console.log(this.state.nutrition);
+  });
+
+  // this.setState({nutrition : API.getNutrition("eggs")}).then( res => {
+  //   console.log(this.state.nutrition);
+  // });
+}
+
+
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
+      <div className="content-wrap">
+        {/* <GameStart/> */}
       </div>
     );
   }
 }
 
 export default App;
+
+/*
+  2 options:
+    - form that allows you to enter nutrition info
+    - search field that permits you to search a nutrition facts API
+      -APIs:
+        - 
+
+
+*/
