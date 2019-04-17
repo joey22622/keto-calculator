@@ -21,19 +21,60 @@ class App extends Component {
         grams: 0,
         calories: 0
       },
+      fiber: {
+        grams: 0,
+        calories: 0
+      },
+      netCarbs : {
+        grams: 0,
+        calories: 0
+      },
       fat: {
         grams: 0,
         calories: 0
       },
     },
-    results: {
-      total: 0
+    total: {
+      grams: 0,
+      calories: 0
+    },
+    ratios: {
+      protein: 0,
+      carbs: 0,
+      fat: 0
     }
   };
   submitCheck = event => {
     if(event.key === "Enter"){
         this.handleFormSubmit(event);
     }
+  }
+  mathPercent = num => {
+    return parseFloat(num*100) + `%`;
+  }
+  mathRound = value => {
+    return Math.round((value) * 100) / 100
+  } 
+  handleCalc = () => {
+    const nutrition = this.state.keto;
+    const protein = nutrition.protein.calories;
+    const fat = nutrition.fat.calories;
+    const carbs = nutrition.netCarbs.calories;
+    const total = fat + carbs + protein;
+    const ratios = {
+      fat: this.mathRound(fat/total),
+      carbs: this.mathRound(carbs/total),
+      protein: this.mathRound(protein/total)
+    }
+    this.setState({
+      ratios: ratios, 
+      total: {
+        grams: this.mathRound(total),
+        calories: this.mathRound(protein/4 + fat/9 + carbs/4)
+    }});
+    console.log(ratios);
+
+
   }
   handleInputChange = event => {
     this.setState({query : event.target.value}, res => {
@@ -50,13 +91,7 @@ class App extends Component {
         // this.handleFormSubmit(event)
     }
 }
-handleFormSubmit = event => {
-  let query;
-  if(this.state.query){
-    query = this.state.query;
-  } else {
-    query = "eggs"
-  }
+loadNutrition = (query) => {
   API.getNutrition(query).then( res => {
     console.log(res.data);
     this.setState({
@@ -71,72 +106,38 @@ handleFormSubmit = event => {
           grams: res.data.nf_total_carbohydrate,
           calories: res.data.nf_total_carbohydrate*4
         },
+        fiber: {
+          grams: res.data.nf_dietary_fiber,
+          calories: res.data.nf_dietary_fiber*4
+        },
+        netCarbs : {
+          grams: res.data.nf_total_carbohydrate - res.data.nf_dietary_fiber,
+          calories: res.data.nf_total_carbohydrate*4 - res.data.nf_dietary_fiber*4
+        },
         protein: {
           grams: res.data.nf_protein,
           calories: res.data.nf_protein*4
-        },
-        results: {
-          total : this.state.keto.fat.calories + this.state.keto.protein.calories + this.state.keto.carbs.calories
         }
       }
     });
 
   }).then( res => {
-    this.setState({
-      results : {
-        total : this.state.keto.fat.calories + this.state.keto.protein.calories + this.state.keto.carbs.calories
-      }
-    });
-    console.log(this.state.keto.results.total);
+    this.handleCalc();
   });
+}
+handleFormSubmit = event => {
+  let query;
+  if(this.state.query){
+    query = this.state.query;
+  } else {
+    query = "eggs"
+  }
+  this.loadNutrition(query);
+  
 }
 
 componentDidMount(){
-  API.getNutrition("eggs").then( res => {
-    console.log(res.data);
-    const data = {
-      fat: {
-        grams: res.data.nf_total_fat,
-        calories: res.data.nf_total_fat*9
-      },
-      carbs: {
-        grams: res.data.nf_total_carbohydrate,
-        calories: res.data.nf_total_carbohydrate*4
-      },
-      protein: {
-        grams: res.data.nf_protein,
-        calories: res.data.nf_protein*4
-      }
-    }
-    this.setState({
-      nutrition: res.data,
-      keto: {
-        fat: {
-          grams: res.data.nf_total_fat,
-          calories: res.data.nf_total_fat*9
-        },
-        carbs: {
-          grams: res.data.nf_total_carbohydrate,
-          calories: res.data.nf_total_carbohydrate*4
-        },
-        protein: {
-          grams: res.data.nf_protein,
-          calories: res.data.nf_protein*4
-        },
-        results: {
-          
-        }
-      }
-    });
-
-  }).then( res => {
-    this.setState({
-      results : {
-        total : this.state.keto.fat.calories + this.state.keto.protein.calories + this.state.keto.carbs.calories
-      }
-    });
-    console.log(this.state.keto.results.total);
-  });
+  this.loadNutrition("eggs");
 
   // this.setState({nutrition : API.getNutrition("eggs")}).then( res => {
   //   console.log(this.state.nutrition);
@@ -156,20 +157,43 @@ componentDidMount(){
         </div>
         <table>
           <tbody>
-            <tr className="fat">
-              <td className="grams">Fat: {this.state.keto.fat.grams} grams</td>
-              <td>{this.state.keto.fat.calories} calories</td>
-              </tr>
-              <tr>
-              <td className="grams">Carbs: {this.state.keto.carbs.grams} grams</td>
+            <tr>
+              <th>Nutrient</th>
+              <th>Grams</th>
+              <th>Calories</th>
+            </tr>
+          <tr className="fat">
+            <td>Fat: </td>
+            <td className="grams">{this.state.keto.fat.grams} grams</td>
+            <td>{this.state.keto.fat.calories} calories</td>
+            </tr>
+            <tr className="sub-row">
+              <td>Total Carbs: </td>
+              <td className="grams">{this.state.keto.carbs.grams} grams</td>
               <td>{this.state.keto.carbs.calories} calories</td>
-              </tr>
-              <tr>
-              <td className="grams">Protein: {this.state.keto.fat.grams} grams</td>
-              <td>{this.state.nutrition.nf_total_fat*9} calories</td>
             </tr>
             <tr>
-              <td>{this.state.results.total} </td>
+              <td className="sub-row">Fiber: </td>
+
+              <td className="grams">{this.state.keto.fiber.grams} grams</td>
+              <td>{this.state.keto.fiber.calories} calories</td>
+            </tr>
+            <tr>
+            <td>Net Carbs: </td>
+
+              <td className="grams">{this.state.keto.netCarbs.grams} grams</td>
+              <td>{this.state.keto.netCarbs.calories} calories</td>
+            </tr>
+            <tr>
+            <td>Protein: </td>
+
+              <td className="grams">{this.state.keto.protein.grams} grams</td>
+              <td>{this.state.keto.protein.calories} calories</td>
+            </tr>
+            <tr>
+              <td>TOTAL: </td>
+              <td>{this.state.total.grams}  grams</td>
+              <td>{this.state.total.calories} calories</td>
             </tr>
             <tr>
               <td>
@@ -178,6 +202,14 @@ componentDidMount(){
             </tr>
           </tbody>
         </table>
+        <div className="keto-results">
+          <div>Protein: {this.mathPercent(this.state.ratios.protein)}</div>
+          <div>Carbs: {this.mathPercent(this.state.ratios.carbs)}</div>
+          <div>Fat: {this.mathPercent(this.state.ratios.fat)}</div>
+
+
+        </div>
+
       </div>
     );
   }
