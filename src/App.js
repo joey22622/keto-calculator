@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import './App.css';
+import './App.scss';
 // import GameStart from './components/GameStart';
 import API from './utils/API';
 import axios from "axios";
@@ -8,8 +8,10 @@ import axios from "axios";
 
 class App extends Component {
   state = {
+    searched : false,
     cards: [],
     query: "",
+    matches: [],
     nutrition: {},
     name: "",
     keto : {
@@ -83,7 +85,6 @@ class App extends Component {
         if(res.data.hits.length > 0){
           console.log(res.data.hits[0].fields.item_name);
         } else {
-          console.log("nope");
         }
       });
     });
@@ -93,33 +94,36 @@ class App extends Component {
 }
 loadNutrition = (query) => {
   API.getNutrition(query).then( res => {
-    console.log(res.data);
-    this.setState({
-      name: res.data.item_name,
-      nutrition: res.data,
-      keto: {
-        fat: {
-          grams: res.data.nf_total_fat,
-          calories: res.data.nf_total_fat*9
-        },
-        carbs: {
-          grams: res.data.nf_total_carbohydrate,
-          calories: res.data.nf_total_carbohydrate*4
-        },
-        fiber: {
-          grams: res.data.nf_dietary_fiber,
-          calories: res.data.nf_dietary_fiber*4
-        },
-        netCarbs : {
-          grams: res.data.nf_total_carbohydrate - res.data.nf_dietary_fiber,
-          calories: res.data.nf_total_carbohydrate*4 - res.data.nf_dietary_fiber*4
-        },
-        protein: {
-          grams: res.data.nf_protein,
-          calories: res.data.nf_protein*4
+    console.log(res);
+    if(res){
+      this.setState({
+        searched : true,
+        name: res.data.item_name,
+        nutrition: res.data,
+        keto: {
+          fat: {
+            grams: res.data.nf_total_fat,
+            calories: res.data.nf_total_fat*9
+          },
+          carbs: {
+            grams: res.data.nf_total_carbohydrate,
+            calories: res.data.nf_total_carbohydrate*4
+          },
+          fiber: {
+            grams: res.data.nf_dietary_fiber,
+            calories: res.data.nf_dietary_fiber*4
+          },
+          netCarbs : {
+            grams: res.data.nf_total_carbohydrate - res.data.nf_dietary_fiber,
+            calories: res.data.nf_total_carbohydrate*4 - res.data.nf_dietary_fiber*4
+          },
+          protein: {
+            grams: res.data.nf_protein,
+            calories: res.data.nf_protein*4
+          }
         }
-      }
-    });
+      });
+    }
 
   }).then( res => {
     this.handleCalc();
@@ -129,32 +133,30 @@ handleFormSubmit = event => {
   let query;
   if(this.state.query){
     query = this.state.query;
+    this.loadNutrition(query);
+
   } else {
-    query = "eggs"
+    // query = "eggs"
   }
-  this.loadNutrition(query);
   
 }
 
 componentDidMount(){
-  this.loadNutrition("eggs");
 
-  // this.setState({nutrition : API.getNutrition("eggs")}).then( res => {
-  //   console.log(this.state.nutrition);
-  // });
 }
 
 
   render() {
     return (
       <div className="content-wrap">
-        {/* <GameStart/> */}
+      <section className="search-section">
+                        <input className="search-query" placeholder="Begin Typing" onKeyPress={this.submitCheck} onChange={this.handleInputChange}/>
+                        <button className="form-submit" onClick={this.handleFormSubmit}>Search</button>
+      </section>
+      {this.state.searched ? (
 
-        <div className="header-center">
-                        <input className="search-query" placeholder="search food" onKeyPress={this.submitCheck} onChange={this.handleInputChange}/>
-                        <button className="formSubmit" onClick={this.handleFormSubmit}>Search</button>
-                        <h1>{this.state.name}</h1>
-        </div>
+      <section className="calc-section">
+      <h1>{this.state.name}</h1>
         <table>
           <tbody>
             <tr>
@@ -206,10 +208,12 @@ componentDidMount(){
           <div>Protein: {this.mathPercent(this.state.ratios.protein)}</div>
           <div>Carbs: {this.mathPercent(this.state.ratios.carbs)}</div>
           <div>Fat: {this.mathPercent(this.state.ratios.fat)}</div>
-
-
         </div>
 
+        </section>
+        ) : (
+          <div></div>
+        )}
       </div>
     );
   }
