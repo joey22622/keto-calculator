@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './App.scss';
 // import GameStart from './components/GameStart';
 import API from './utils/API';
+import Match from './Match';
 import axios from "axios";
 
 
@@ -14,30 +15,32 @@ class App extends Component {
     matches: [],
     nutrition: {},
     name: "",
+    calculators : {
+      calories: (ratio,grams) => {return ratio*grams}
+    },
     keto : {
       protein: {
         grams: 0,
-        calories: 0
+        calories: 4
       },
       carbs: {
         grams: 0,
-        calories: 0
+        calories: 4
       },
       fiber: {
         grams: 0,
-        calories: 0
+        calories: 4
       },
       netCarbs : {
         grams: 0,
-        calories: 0
       },
       fat: {
         grams: 0,
-        calories: 0
+        calories: 9
       },
     },
     total: {
-      grams: 0,
+      grams: () => {},
       calories: 0
     },
     ratios: {
@@ -81,17 +84,31 @@ class App extends Component {
   handleInputChange = event => {
     this.setState({query : event.target.value}, res => {
     console.log(this.state.query);
+    if(this.state.query){
       API.getResults(this.state.query).then(res => {
         if(res.data.hits.length > 0){
           console.log(res.data.hits[0].fields.item_name);
+          const newMatches = [];
+          for(let i = 0; i < 8; i++){
+            const match = {
+              name: res.data.hits[i].fields.item_name,
+              id: res.data.hits[i]._id
+            }
+            newMatches.push(match);
+            this.setState({matches : newMatches});
+          }
+          console.log(this.state.matches);          
+
         } else {
         }
       });
+    }
     });
     if(event.keyCode === "a"){
         // this.handleFormSubmit(event)
     }
 }
+
 loadNutrition = (query) => {
   API.getNutrition(query).then( res => {
     console.log(res);
@@ -103,19 +120,15 @@ loadNutrition = (query) => {
         keto: {
           fat: {
             grams: res.data.nf_total_fat,
-            calories: res.data.nf_total_fat*9
           },
           carbs: {
             grams: res.data.nf_total_carbohydrate,
-            calories: res.data.nf_total_carbohydrate*4
           },
           fiber: {
             grams: res.data.nf_dietary_fiber,
-            calories: res.data.nf_dietary_fiber*4
           },
           netCarbs : {
             grams: res.data.nf_total_carbohydrate - res.data.nf_dietary_fiber,
-            calories: res.data.nf_total_carbohydrate*4 - res.data.nf_dietary_fiber*4
           },
           protein: {
             grams: res.data.nf_protein,
@@ -150,8 +163,23 @@ componentDidMount(){
     return (
       <div className="content-wrap">
       <section className="search-section">
-                        <input className="search-query" placeholder="Begin Typing" onKeyPress={this.submitCheck} onChange={this.handleInputChange}/>
-                        <button className="form-submit" onClick={this.handleFormSubmit}>Search</button>
+        <input className="search-query" placeholder="Begin Typing" onKeyPress={this.submitCheck} onChange={this.handleInputChange}/>
+        <button className="form-submit" onClick={this.handleFormSubmit}>Search</button>
+        {this.state.matches.length > 0 ? (
+        <div className="results">
+          {this.state.matches.map(card => (
+          <Match 
+            id = {card.id}
+            name = {card.name}
+            clicked = {this.loadNutrition()}
+          />
+          ))}
+        </div>
+        ) : (
+          <div className="results">
+          </div>
+        )}
+
       </section>
       {this.state.searched ? (
 
@@ -167,7 +195,9 @@ componentDidMount(){
           <tr className="fat">
             <td>Fat: </td>
             <td className="grams">{this.state.keto.fat.grams} grams</td>
-            <td>{this.state.keto.fat.calories} calories</td>
+            {/* <td>{this.state.keto.fat.calories} calories</td> */}
+            <td>{this.state.calculators.calories.apply(this.state.keto.fat.grams, 4)} calories</td>
+
             </tr>
             <tr className="sub-row">
               <td>Total Carbs: </td>
